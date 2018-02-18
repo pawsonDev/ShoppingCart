@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * Created by Pawel on 2018-02-18.
  */
@@ -24,8 +26,8 @@ public class ShoppingCartController {
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<ShoppingCartDTO> getAllProductsInCart() {
-        ShoppingCartDTO shoppingCartDTO = shoppingCartService.getAllProductsInCart();
+    public ResponseEntity<ShoppingCartDTO> getShoppingCartSummary() {
+        ShoppingCartDTO shoppingCartDTO = shoppingCartService.getShoppingCartSummary();
         if (shoppingCartDTO != null) {
             return ResponseEntity.ok(shoppingCartDTO);
         }
@@ -35,20 +37,20 @@ public class ShoppingCartController {
     @RequestMapping(value = "/add/{productId}", method = RequestMethod.PUT)
     public ResponseEntity<ShoppingCartDTO> addProductToCart(@PathVariable("productId") Long productId) {
         shoppingCartService.addProductToCart(productId);
-        return getAllProductsInCart();
+        return getShoppingCartSummary();
     }
 
     @RequestMapping(value = "/remove/{productId}", method = RequestMethod.PUT)
     public ResponseEntity<ShoppingCartDTO> removeProductFromCart(@PathVariable("productId") Long productId) {
         shoppingCartService.removeProductFromCart(productId);
-        return getAllProductsInCart();
+        return getShoppingCartSummary();
     }
 
     @RequestMapping(value = "/search", method = RequestMethod.GET)
-    public ResponseEntity<Product> searchProduct(@RequestParam("name") String productName) {
-        Product product = shoppingCartService.searchProduct(productName);
-        if (product != null) {
-            return ResponseEntity.ok(product);
+    public ResponseEntity<List<Product>> searchProduct(@RequestParam("name") String productName) {
+        List<Product> products = shoppingCartService.searchProduct(productName);
+        if (products != null && !products.isEmpty()) {
+            return ResponseEntity.ok(products);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }

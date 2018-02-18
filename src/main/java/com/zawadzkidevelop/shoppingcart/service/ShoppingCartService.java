@@ -10,8 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.math.BigDecimal;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class ShoppingCartService {
 
     private final ProductRepository productRepository;
 
-    private Map<String, Integer> products;
+    private Map<Product, Integer> products;
 
     @Autowired
     public ShoppingCartService(ProductRepository productRepository) {
@@ -33,46 +34,57 @@ public class ShoppingCartService {
         this.products = new HashMap<>();
     }
 
-    public ShoppingCartDTO getAllProductsInCart() {
+    public ShoppingCartDTO getShoppingCartSummary() {
         ShoppingCartDTO shoppingCartDTO = new ShoppingCartDTO();
-        shoppingCartDTO.setProducts(Collections.unmodifiableMap(products));
+        shoppingCartDTO.setProducts(getProductsInCart(products));
         shoppingCartDTO.setTotalAmountOfProducts(countAmountOfProductsInCart(products));
         shoppingCartDTO.setTotalPrice(countTotalPriceForProducts(products));
         return shoppingCartDTO;
     }
 
-    private int countAmountOfProductsInCart(Map<String, Integer> products) {
+    private Map<String, Integer> getProductsInCart(Map<Product, Integer> products) {
+        return products.entrySet().stream().collect(Collectors.toMap(k -> k.getKey().getName(), v -> v.getValue()));
+    }
+
+    private int countAmountOfProductsInCart(Map<Product, Integer> products) {
         return products.values().stream().collect(Collectors.summingInt(v -> v.intValue()));
     }
 
-    private BigDecimal countTotalPriceForProducts(Map<String, Integer> products) {
-        return new BigDecimal(2.66);
+    private BigDecimal countTotalPriceForProducts(Map<Product, Integer> products) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<Product, Integer> entry : products.entrySet()) {
+            total = total.add(entry.getKey().getPrice().multiply(new BigDecimal(entry.getValue())));
+        }
+        return total;
     }
 
     public void addProductToCart(Long productId) {
-        String productName = productRepository.findOne(productId).getName();
-        if (products.containsKey(productName)) {
-            products.replace(productName, products.get(productName) + 1);
+        Product productToAdd = productRepository.findOne(productId);
+        if (products.containsKey(productToAdd)) {
+            products.replace(productToAdd, products.get(productToAdd) + 1);
         } else {
-            products.put(productName, 1);
+            products.put(productToAdd, 1);
         }
     }
 
     public void removeProductFromCart(Long productId) {
-        String productName = productRepository.findOne(productId).getName();
-        if (products.containsKey(productName)) {
-            if (products.get(productName) == 1) {
-                products.remove(productName);
+        Product productToRemove = productRepository.findOne(productId);
+        if (products.containsKey(productToRemove)) {
+            if (products.get(productToRemove) == 1) {
+                products.remove(productToRemove);
             } else {
-                products.replace(productName, products.get(productName) - 1);
+                products.replace(productToRemove, products.get(productToRemove) - 1);
             }
         }
     }
 
-    public Product searchProduct(String productName) {
-        if (products.containsKey(productName)) {
-            return productRepository.findProductByName(productName);
+    public List<Product> searchProduct(String productName) {
+        List<Product> searchResult = new ArrayList<>();
+        for (Product product : products.keySet()) {
+            if (product.getName().toLowerCase().contains(productName.toLowerCase())) {
+                searchResult.add(product);
+            }
         }
-        return null;
+        return searchResult;
     }
 }

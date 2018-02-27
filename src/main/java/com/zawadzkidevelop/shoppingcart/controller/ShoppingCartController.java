@@ -28,10 +28,7 @@ public class ShoppingCartController {
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<ShoppingCartDTO> getShoppingCartSummary() {
         ShoppingCartDTO shoppingCartDTO = shoppingCartService.getShoppingCartSummary();
-        if (shoppingCartDTO != null) {
-            return ResponseEntity.ok(shoppingCartDTO);
-        }
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+        return ResponseEntity.ok(shoppingCartDTO);
     }
 
     @RequestMapping(value = "/add/{productId}", method = RequestMethod.PUT)
